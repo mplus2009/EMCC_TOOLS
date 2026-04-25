@@ -1,0 +1,212 @@
+
+
+/* ============================================ */
+/* NUEVOS ESTILOS PARA ALMUERZO Y TARDE         */
+/* ============================================ */
+
+.dia-titulo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.hoy-badge {
+    background: #10b981;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.turnos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.merienda-separador {
+    background: #dcfce7;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    text-align: center;
+    font-weight: 600;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+    font-size: 0.9em;
+}
+
+.almuerzo-separador {
+    background: #fef3c7;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    text-align: center;
+    font-weight: 600;
+    color: #92400e;
+    border-left: 4px solid #fbbf24;
+    font-size: 0.9em;
+}
+
+.turno-item.turno-tarde {
+    background: #f0fdf4;
+    border-left-color: #22c55e;
+}
+
+.turno-tipo-badge {
+    font-size: 0.7em;
+    background: #fbbf24;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+
+.leyenda-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.leyenda-titulo {
+    color: #1e3c72;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.leyenda-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.85em;
+}
+
+.leyenda-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.admin-link {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.admin-btn {
+    display: inline-block;
+    background: #1e3c72;
+    color: white;
+    padding: 14px 24px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #94a3b8;
+}
+
+.empty-state span {
+    font-size: 50px;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.empty-state small {
+    font-size: 0.85em;
+}
+
+.actual-tipo {
+    margin-top: 8px;
+    background: rgba(255,255,255,0.2);
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+}
+
+.almuerzo-separador {
+    background: #fef3c7;
+    border-radius: 12px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 600;
+    color: #92400e;
+    border-left: 4px solid #fbbf24;
+}
+
+.merienda-separador {
+    background: #dcfce7;
+    border-radius: 12px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 600;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.turno-item.tarde {
+    background: #f0fdf4;
+    border-left-color: #22c55e;
+}
+
+
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Poppins', sans-serif; background: #f0f4f8; min-height: 100vh; padding-bottom: 30px; }
+.header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 16px 20px; display: flex; align-items: center; }
+.back-btn { background: rgba(255,255,255,0.15); width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; text-decoration: none; margin-right: 16px; }
+.header-title { color: white; font-size: 1.4em; font-weight: 600; }
+.main-content { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+
+.info-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 20px; display: flex; justify-content: space-around; }
+.info-row { text-align: center; }
+.info-row span { color: #64748b; display: block; font-size: 0.9em; }
+.info-row strong { color: #1e3c72; font-size: 1.2em; }
+
+.asignatura-actual { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 20px; padding: 20px; margin-bottom: 20px; color: white; text-align: center; }
+.actual-label { font-size: 0.9em; opacity: 0.9; }
+.actual-asignatura { font-size: 1.8em; font-weight: 700; }
+.actual-horario { font-size: 1.1em; opacity: 0.9; margin-top: 5px; }
+
+.selector-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+.selector-form { display: flex; flex-direction: column; gap: 10px; }
+.selector-form select { padding: 14px; border: 2px solid #e0e0e0; border-radius: 14px; font-family: 'Poppins', sans-serif; }
+.selector-form button { padding: 14px; background: #1e3c72; color: white; border: none; border-radius: 14px; font-weight: 600; cursor: pointer; }
+
+.horario-container { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+.dia-card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+.dia-card.dia-actual { border: 2px solid #10b981; }
+.dia-card h3 { color: #1e3c72; margin-bottom: 12px; font-size: 1.1em; }
+
+.turno-item { background: #f8fafc; border-radius: 12px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #cbd5e0; }
+.turno-item.turno-actual { background: #d1fae5; border-left-color: #10b981; }
+.turno-item.turno-especial { background: #fef3c7; border-left-color: #fbbf24; }
+.turno-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em; color: #64748b; }
+.turno-asignatura { font-weight: 600; color: #1e3c72; }
+.turno-actual-badge { margin-top: 8px; font-size: 0.75em; color: #059669; font-weight: 600; }
+
+.empty-state { text-align: center; padding: 40px; color: #94a3b8; font-size: 1.1em; }
+.admin-link { margin-top: 20px; text-align: center; }
+.admin-link a { color: #1e3c72; text-decoration: none; font-weight: 600; }

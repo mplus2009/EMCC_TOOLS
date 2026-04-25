@@ -1,62 +1,69 @@
 <?php
+// ============================================
+// LOGIN_PROCESAR.PHP - Procesar login (con CORS)
+// ============================================
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Credentials: true");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+session_start();
+
+require_once '../config/db.php';
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = strtoupper(eliminarTildes($_POST['nombre'] ?? ''));
     $apellidos = strtoupper(eliminarTildes($_POST['apellidos'] ?? ''));
-    $ci = strtoupper(eliminarTildes($_POST['ci'] ?? ''));
     $password = $_POST['password'] ?? '';
     $cargo = $_POST['cargo'] ?? '';
     
-    if ($nombre && $apellidos && $ci && $password && $cargo) {
-        
+    if ($nombre && $apellidos && $password && $cargo) {
         $tablas_permitidas = ['directiva', 'oficial', 'profesor', 'estudiante'];
         
         if (in_array($cargo, $tablas_permitidas)) {
-            
             $sql = "SELECT * FROM $cargo WHERE 
-                    UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nombre, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u'), 'Á','A'), 'É','E'), 'Í','I'), 'Ó','O'), 'Ú','U')) = ? 
+                    UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nombre, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) = ? 
                     AND 
-                    UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(apellidos, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u'), 'Á','A'), 'É','E'), 'Í','I'), 'Ó','O'), 'Ú','U')) = ?
-                    AND 
-                    UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ci, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u'), 'Á','A'), 'É','E'), 'Í','I'), 'Ó','O'), 'Ú','U')) = ?";
+                    UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(apellidos, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) = ?";
             
             $stmt = $conexion->prepare($sql);
             
             if ($stmt) {
-                $stmt->bind_param("sss", $nombre, $apellidos, $ci);
+                $stmt->bind_param("ss", $nombre, $apellidos);
                 $stmt->execute();
                 $resultado = $stmt->get_result();
                 
-                if ($resultado->num_rows === 1) {
-                    $usuario = $resultado->fetch_assoc();
-                    
-                    $password_valida = false;
-                    
-                    if (password_verify($password, $usuario['password'])) {
-                        $password_valida = true;
-                    } elseif ($password === $usuario['password']) {
-                        $password_valida = true;
+                $usuario_encontrado = null;
+                while ($row = $resultado->fetch_assoc()) {
+                    if (password_verify($password, $row['password']) || $password === $row['password']) {
+                        $usuario_encontrado = $row;
+                        break;
                     }
-                    
-                    if ($password_valida) {
-                        $_SESSION['usuario_id'] = $usuario['id'];
-                        $_SESSION['usuario_nombre'] = $usuario['nombre'];
-                        $_SESSION['usuario_apellidos'] = $usuario['apellidos'];
-                        $_SESSION['usuario_cargo'] = $cargo;
-                        $_SESSION['logueado'] = true;
-                        
-                        session_write_close();
-                        
-                        header('Location: Dashboard/index.php');
-                        exit();
-                    } else {
-                        $error = 'Contraseña incorrecta';
-                    }
-                } else {
-                    $error = 'Usuario no encontrado';
                 }
                 
+                if ($usuario_encontrado) {
+                    $_SESSION['usuario_id'] = $usuario_encontrado['id'];
+                    $_SESSION['usuario_nombre'] = $usuario_encontrado['nombre'];
+                    $_SESSION['usuario_apellidos'] = $usuario_encontrado['apellidos'];
+                    $_SESSION['usuario_ci'] = $usuario_encontrado['ci'] ?? '';
+                    $_SESSION['usuario_cargo'] = $cargo;
+                    $_SESSION['logueado'] = true;
+                    
+                    session_write_close();
+                    
+                    header('Location: ../../frontend/pages/dashboard.html');
+                    exit();
+                } else {
+                    $error = 'Usuario no encontrado o contraseña incorrecta';
+                }
                 $stmt->close();
             } else {
                 $error = 'Error en la consulta: ' . $conexion->error;
@@ -67,5 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $error = 'Todos los campos son obligatorios';
     }
+}
+
+// Si hay error, devolver JSON
+if ($error) {
+    http_response_code(401);
+    echo json_encode(['error' => $error]);
+    exit();
 }
 ?>
