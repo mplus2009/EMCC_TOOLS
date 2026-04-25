@@ -1,0 +1,947 @@
+/* ============================================ */
+/* NOTIFICAR_ESTILOS.CSS - PARTE 1              */
+/* Reset, Header, Main y Form Sections          */
+/* ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    padding-bottom: 30px;
+}
+
+/* ============================================ */
+/* HEADER                                       */
+/* ============================================ */
+.header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 22px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.back-btn:active {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.header-title {
+    color: white;
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
+/* ============================================ */
+/* MAIN CONTENT                                 */
+/* ============================================ */
+.main-content {
+    padding: 20px 16px;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+/* ============================================ */
+/* FORM SECTIONS                                */
+/* ============================================ */
+.form-section {
+    background: white;
+    border-radius: 22px;
+    padding: 22px 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+    color: #1e3c72;
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e8edf2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+/* ============================================ */
+/* FORM CONTROLS                                */
+/* ============================================ */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    color: #2a5298;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1em;
+    border: 2px solid #e0e0e0;
+    border-radius: 14px;
+    background: white;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2a5298;
+    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.08);
+}
+
+.form-control:disabled {
+    background: #f5f5f5;
+    color: #999;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ============================================ */
+/* TIMEZONE INFO                                */
+/* ============================================ */
+.timezone-info {
+    color: #64748b;
+    font-size: 0.85em;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.timezone-info i {
+    color: #667eea;
+}
+/* ============================================ */
+/* NOTIFICAR_ESTILOS.CSS - PARTE 2              */
+/* Destinatarios, Búsqueda y Actividades        */
+/* ============================================ */
+
+/* ============================================ */
+/* DESTINATARIOS LIST                           */
+/* ============================================ */
+.destinatarios-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    min-height: 60px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 1px dashed #cbd5e0;
+}
+
+.destinatario-tag {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.destinatario-tag i {
+    cursor: pointer;
+    opacity: 0.8;
+    font-size: 1.1em;
+    transition: opacity 0.2s;
+}
+
+.destinatario-tag i:hover {
+    opacity: 1;
+}
+
+.empty-destinatarios {
+    width: 100%;
+    text-align: center;
+    color: #888;
+    padding: 12px;
+    font-size: 0.95em;
+}
+
+.mensaje-exito {
+    width: 100%;
+    background: #10b981;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 0.95em;
+    margin-top: 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================ */
+/* SEARCH BOX (BUSCADOR DE ESTUDIANTES)         */
+/* ============================================ */
+.search-box {
+    margin-bottom: 18px;
+}
+
+.search-input-wrapper {
+    position: relative;
+}
+
+.search-input-wrapper i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 1.1em;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    padding: 15px 16px 15px 48px;
+    font-size: 1em;
+    border: 2px solid #e0e0e0;
+    border-radius: 14px;
+    background: white;
+    font-family: 'Poppins', sans-serif;
+}
+
+.search-input-wrapper input:focus {
+    outline: none;
+    border-color: #2a5298;
+}
+
+.search-results {
+    background: white;
+    border-radius: 14px;
+    margin-top: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    display: none;
+    border: 1px solid #e8edf2;
+}
+
+.search-results.show {
+    display: block;
+}
+
+.search-result-item {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e8edf2;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: #f8fafc;
+}
+
+.search-result-item:active {
+    background: #e8edf2;
+}
+
+.search-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.search-result-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.search-result-details {
+    font-size: 0.85em;
+    color: #64748b;
+}
+
+.search-empty {
+    padding: 20px;
+    text-align: center;
+    color: #888;
+}
+
+/* ============================================ */
+/* BOTÓN QR SCANNER                             */
+/* ============================================ */
+.btn-qr-scanner {
+    width: 100%;
+    padding: 15px;
+    background: #f0f4f8;
+    color: #1e3c72;
+    border: 2px dashed #1e3c72;
+    border-radius: 14px;
+    font-size: 1.05em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-qr-scanner:active {
+    background: #e2e8f0;
+}
+
+.btn-qr-scanner i {
+    font-size: 1.2em;
+}
+
+/* ============================================ */
+/* ACTIVIDADES LIST                             */
+/* ============================================ */
+.actividades-list {
+    margin-bottom: 18px;
+    min-height: 60px;
+}
+
+.actividad-tag {
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actividad-tag-nombre {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 3px;
+}
+
+.actividad-tag-categoria {
+    font-size: 0.8em;
+    color: #64748b;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.actividad-tag-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.actividad-tag-actions i {
+    cursor: pointer;
+    color: #999;
+    font-size: 1.1em;
+    transition: color 0.2s;
+}
+
+.actividad-tag-actions i:hover {
+    color: #ef4444;
+}
+
+.empty-actividades {
+    color: #888;
+    text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e0;
+    font-size: 0.95em;
+}
+
+/* ============================================ */
+/* BUSCADOR DE ACTIVIDADES                      */
+/* ============================================ */
+.actividad-buscador-container {
+    margin-bottom: 18px;
+}
+
+.actividad-search-results {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-top: 8px;
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e8edf2;
+    display: none;
+}
+
+.actividad-search-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8edf2;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.actividad-search-item:last-child {
+    border-bottom: none;
+}
+
+.actividad-search-item:hover {
+    background: #f8fafc;
+}
+
+.actividad-search-item:active {
+    background: #e8edf2;
+}
+
+.actividad-search-info {
+    flex: 1;
+}
+
+.actividad-search-nombre {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.actividad-search-categoria {
+    font-size: 0.8em;
+    color: #64748b;
+    background: #e2e8f0;
+    padding: 3px 10px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.actividad-search-valor {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.95em;
+    white-space: nowrap;
+}
+
+/* ============================================ */
+/* TIPO SELECTOR (MÉRITO/DEMÉRITO)              */
+/* ============================================ */
+.tipo-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.tipo-btn {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 14px;
+    background: white;
+    font-size: 1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tipo-btn i {
+    font-size: 1.1em;
+}
+
+.tipo-btn[data-tipo="merito"].active {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.tipo-btn[data-tipo="demerito"].active {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+/* ============================================ */
+/* BOTÓN AGREGAR ACTIVIDAD                      */
+/* ============================================ */
+.btn-add-actividad {
+    width: 100%;
+    padding: 15px;
+    background: #1e3c72;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.05em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-add-actividad:active {
+    background: #15294f;
+    transform: scale(0.98);
+}
+
+.btn-add-actividad:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================ */
+/* NOTIFICAR_ESTILOS.CSS - PARTE 3              */
+/* Notificador, Botón Submit, Modales y Overlay */
+/* ============================================ */
+
+/* ============================================ */
+/* NOTIFICADOR (QUIÉN NOTIFICA)                 */
+/* ============================================ */
+.notificador-actual {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #e8edf2;
+}
+
+.notificador-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.notificador-info i {
+    font-size: 42px;
+    color: #667eea;
+}
+
+.notificador-info div {
+    display: flex;
+    flex-direction: column;
+}
+
+.notificador-info strong {
+    font-size: 1em;
+    color: #1e293b;
+}
+
+.notificador-info span {
+    color: #64748b;
+    font-size: 0.9em;
+}
+
+.notificador-cargo {
+    font-size: 0.8em;
+    background: #e2e8f0;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.btn-cambiar {
+    background: #e2e8f0;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cambiar:active {
+    background: #cbd5e0;
+}
+
+/* ============================================ */
+/* NOTIFICADOR TEMPORAL                         */
+/* ============================================ */
+.notificador-temporal {
+    margin-top: 15px;
+}
+
+.temp-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-verificar {
+    flex: 1;
+    padding: 14px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-verificar:active {
+    background: #059669;
+}
+
+.btn-cancelar {
+    flex: 1;
+    padding: 14px;
+    background: #e2e8f0;
+    color: #64748b;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-cancelar:active {
+    background: #cbd5e0;
+}
+
+/* ============================================ */
+/* BOTÓN SUBMIT                                 */
+/* ============================================ */
+.btn-submit {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.2em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 6px 18px rgba(30, 60, 114, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-submit:active {
+    transform: scale(0.98);
+    box-shadow: 0 3px 10px rgba(30, 60, 114, 0.2);
+}
+
+.btn-submit:disabled {
+    background: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================ */
+/* MODALES                                      */
+/* ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 32px 32px 0 0;
+    padding: 28px 22px;
+    width: 100%;
+    max-width: 500px;
+    animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.modal-content h2 {
+    color: #1e3c72;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-content h2 i {
+    color: #667eea;
+}
+
+/* ============================================ */
+/* MODAL DE CONFIRMACIÓN                        */
+/* ============================================ */
+.confirm-resumen {
+    margin-bottom: 20px;
+}
+
+.confirm-section {
+    margin-bottom: 18px;
+}
+
+.confirm-section h3 {
+    color: #64748b;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.confirm-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.confirm-tags span {
+    background: #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    color: #1e293b;
+}
+
+.confirm-actividad {
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.confirm-actividad.merito {
+    background: #d1fae5;
+}
+
+.confirm-actividad.demerito {
+    background: #fee2e2;
+}
+
+.confirm-actividad strong {
+    color: #1e293b;
+}
+
+.confirm-actividad small {
+    color: #64748b;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.modal-buttons .btn-cancelar,
+.modal-buttons .btn-confirmar {
+    flex: 1;
+    padding: 15px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+}
+
+.modal-buttons .btn-cancelar {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+.modal-buttons .btn-confirmar {
+    background: #10b981;
+    color: white;
+}
+
+.modal-buttons .btn-cancelar:active {
+    background: #cbd5e0;
+}
+
+.modal-buttons .btn-confirmar:active {
+    background: #059669;
+}
+
+/* ============================================ */
+/* MODAL DE ÉXITO                               */
+/* ============================================ */
+.success-modal {
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 65px;
+    color: #10b981;
+    margin-bottom: 15px;
+}
+
+.success-modal h2 {
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.success-modal p {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.btn-success {
+    width: 100%;
+    padding: 16px;
+    background: #1e3c72;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-success:active {
+    background: #15294f;
+}
+
+/* ============================================ */
+/* OVERLAY                                      */
+/* ============================================ */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+
+.overlay.show {
+    display: block;
+}
+
+/* ============================================ */
+/* RESPONSIVE                                   */
+/* ============================================ */
+@media (max-width: 480px) {
+    .header {
+        padding: 14px 16px;
+    }
+    
+    .header-title {
+        font-size: 1.3em;
+    }
+    
+    .main-content {
+        padding: 16px 12px;
+    }
+    
+    .form-section {
+        padding: 18px 16px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .tipo-btn {
+        padding: 12px;
+        font-size: 0.95em;
+    }
+    
+    .btn-submit {
+        padding: 16px;
+        font-size: 1.1em;
+    }
+    
+    .modal-content {
+        padding: 24px 18px;
+    }
+}
