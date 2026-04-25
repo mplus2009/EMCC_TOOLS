@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redireccionando...</title>
+    <script>
+        // Verificar sesión almacenada en localStorage
+        const logueado = localStorage.getItem('logueado');
+        
+        if (logueado === 'true') {
+            window.location.href = 'pages/dashboard.html';
+        } else {
+            window.location.href = 'pages/login.html';
+        }
+    </script>
+</head>
+<body>
+    <p>Redireccionando...</p>
+</body>
+</html>
