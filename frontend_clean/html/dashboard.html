@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e3c72">
+    <title>Dashboard - Sistema Escolar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <header class="header">
+        <div class="header-left">
+            <button class="qr-btn" id="qrBtn"><i class="fas fa-qrcode"></i></button>
+            <a href="notificar.html" class="notificar-btn">
+                <i class="fas fa-bell"></i> Notificar
+            </a>
+        </div>
+        <div class="header-title">
+            <span class="greeting">Hola, <span id="usuarioNombre">Usuario</span></span>
+        </div>
+        <div class="header-right">
+            <button class="account-btn" id="accountBtn">
+                <i class="fas fa-user"></i>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="account-dropdown" id="accountDropdown">
+                <div class="dropdown-header">
+                    <div class="dropdown-avatar"><i class="fas fa-user"></i></div>
+                    <h3 id="dropdownNombre">Nombre Usuario</h3>
+                    <p id="dropdownCargo">Cargo</p>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item"><i class="fas fa-user"></i> Mi Perfil</a>
+                    <a href="#" class="dropdown-item"><i class="fas fa-cog"></i> Configuración</a>
+                    <a href="#" class="dropdown-item"><i class="fas fa-calendar"></i> Horario</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="welcome-section">
+            <div class="welcome-header">
+                <h1><span class="wave">👋</span> ¡Bienvenido!</h1>
+                <span class="user-badge" id="userBadge">
+                    <i class="fas fa-user"></i>
+                    <span id="badgeCargo">Cargo</span>
+                </span>
+            </div>
+            <p class="welcome-text">Panel de control del sistema escolar</p>
+            <p class="last-update"><i class="fas fa-clock"></i> Actualizado: <span id="lastUpdate"></span></p>
+        </div>
+
+        <div class="panel-cargo" id="panelCargo">
+            <div class="panel-icon"><i class="fas fa-user-shield"></i></div>
+            <h2>Panel de Usuario</h2>
+            <p>Bienvenido al sistema de gestión escolar.</p>
+        </div>
+    </main>
+
+    <!-- Modal QR -->
+    <div class="modal" id="qrModal">
+        <div class="qr-modal-content">
+            <button class="modal-close" id="closeModalBtn"><i class="fas fa-times"></i></button>
+            <h2><i class="fas fa-qrcode"></i> Tu Código QR</h2>
+            <div class="qr-container">
+                <div class="qr-wrapper">
+                    <div class="qr-code" id="qrCode"></div>
+                    <div class="qr-user-name" id="qrUserName"></div>
+                </div>
+            </div>
+            <div class="user-qr-info">
+                <span class="qr-info-item"><i class="fas fa-id-card"></i> CI: <span id="qrCi"></span></span>
+                <span class="qr-info-item"><i class="fas fa-user"></i> <span id="qrCargo"></span></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

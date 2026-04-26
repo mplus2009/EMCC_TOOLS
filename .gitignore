@@ -1,50 +1,28 @@
 ```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-
 # Dependencies
 vendor/
-node_modules/
+composer.lock
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
 
-# Environment
+# Environment specific files
 .env
 .env.local
-*.env.*
+.env.*
 
-# Editors
+# IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Database config backup
-backend/config/db.php.bak
-backend/config/db.php~
-
-# Session files
-backend/includes/config_sesion.php.bak
-backend/includes/config_sesion.php~
-
-# PHP session files
-*.sess
-sess_*
-
-# Cache files
-*.cache
-.cache
-
-# Backup files
-*~
-*.bak
-*.backup
-
-# OS specific
+# OS files
 .DS_Store
 Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.phar
 ```
