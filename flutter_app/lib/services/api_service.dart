@@ -4,7 +4,7 @@ import '../models/usuario.dart';
 
 class ApiService {
   // CAMBIAR ESTA URL POR LA DE TU SERVIDOR
-  static const String baseUrl = 'http://tudominio.com/backend/api';
+  static const String baseUrl = 'http://tarjeta de reporte.infinityfree.me/backend/api';
   
   String? _token;
   
