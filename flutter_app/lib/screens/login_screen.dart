@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../models/usuario.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,57 +12,56 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController();
-  final _apellidosController = TextEditingController();
+  final _ciController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _cargoSeleccionado = '';
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _apellidosController.dispose();
+    _ciController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _iniciarSesion() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final result = await ApiService.login(
-        nombre: _nombreController.text.trim().toUpperCase(),
-        apellidos: _apellidosController.text.trim().toUpperCase(),
-        password: _passwordController.text,
-        cargo: _cargoSeleccionado,
+      final apiService = ApiService();
+      final result = await apiService.login(
+        _ciController.text.trim(),
+        _passwordController.text,
       );
 
+      if (!mounted) return;
+
       if (result['success'] == true) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/dashboard');
-        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
       } else {
-        setState(() {
-          _errorMessage = result['message'] ?? 'Error al iniciar sesión';
-        });
+        _showError(result['message'] ?? 'Error al iniciar sesión');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error de conexión. Verifica tu internet.';
-      });
+      if (!mounted) return;
+      _showError(e.toString());
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[700],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -73,254 +72,192 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1e3c72), Color(0xFF2a5298)],
+            colors: [
+              Color(0xFF1e3c72),
+              Color(0xFF2a5298),
+            ],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  // Header
+                  
+                  // Logo
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        size: 60,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Título
+                  const Center(
+                    child: Text(
+                      'EMCC DIGITAL',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const Center(
+                    child: Text(
+                      'Iniciar Sesión',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  
+                  // Card de formulario
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.98),
-                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 30,
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
-                          FontAwesomeIcons.graduationCap,
-                          size: 60,
-                          color: Color(0xFF1e3c72),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Acceso',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1e3c72),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sistema de Gestión Escolar',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Botón QR
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/escaner-qr');
-                      },
-                      icon: const FaIcon(FontAwesomeIcons.qrcode, size: 24),
-                      label: const Text('Escanear QR para Iniciar Sesión'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF1e3c72),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        elevation: 8,
-                        shadowColor: const Color(0xFF1e3c72).withOpacity(0.3),
-                      ),
-                    ),
-                  ),
-                  
-                  // Divisor
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'o ingresa manualmente',
-                          style: TextStyle(color: Colors.white.withOpacity(0.9)),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Mensaje de error
-                  if (_errorMessage != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFfee2e2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFdc2626), width: 2),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Color(0xFFdc2626)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Color(0xFF991b1b)),
+                        // CI Field
+                        TextFormField(
+                          controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: InputDecoration(
+                            labelText: 'CI (Carnet de Identidad)',
+                            prefixIcon: const Icon(Icons.badge, color: Color(0xFF1e3c72)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF1e3c72), width: 2),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  
-                  // Formulario
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.98),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Column(
-                      children: [
-                        // Nombre
-                        TextFormField(
-                          controller: _nombreController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre',
-                            prefixIcon: FaIcon(FontAwesomeIcons.user, size: 18),
-                          ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Ingresa tu nombre';
+                              return 'Ingrese su CI';
                             }
                             return null;
                           },
-                          textCapitalization: TextCapitalization.characters,
                         ),
+                        const SizedBox(height: 20),
                         
-                        const SizedBox(height: 16),
-                        
-                        // Apellidos
-                        TextFormField(
-                          controller: _apellidosController,
-                          decoration: const InputDecoration(
-                            labelText: 'Apellidos',
-                            prefixIcon: FaIcon(FontAwesomeIcons.users, size: 18),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingresa tus apellidos';
-                            }
-                            return null;
-                          },
-                          textCapitalization: TextCapitalization.characters,
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Contraseña
+                        // Password Field
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
+                          obscureText: _obscurePassword,
+                          style: const TextStyle(fontSize: 16),
+                          decoration: InputDecoration(
                             labelText: 'Contraseña',
-                            prefixIcon: FaIcon(FontAwesomeIcons.lock, size: 18),
+                            prefixIcon: const Icon(Icons.lock, color: Color(0xFF1e3c72)),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() => _obscurePassword = !_obscurePassword);
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF1e3c72), width: 2),
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Ingresa tu contraseña';
+                              return 'Ingrese su contraseña';
                             }
                             return null;
                           },
                         ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Cargo
-                        DropdownButtonFormField<String>(
-                          value: _cargoSeleccionado.isEmpty ? null : _cargoSeleccionado,
-                          decoration: const InputDecoration(
-                            labelText: 'Cargo',
-                            prefixIcon: FaIcon(FontAwesomeIcons.userTag, size: 18),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: '', child: Text('Selecciona tu cargo')),
-                            DropdownMenuItem(value: 'directiva', child: Text('Directiva')),
-                            DropdownMenuItem(value: 'oficial', child: Text('Oficial')),
-                            DropdownMenuItem(value: 'profesor', child: Text('Profesor')),
-                            DropdownMenuItem(value: 'estudiante', child: Text('Estudiante')),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _cargoSeleccionado = value ?? '';
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Selecciona tu cargo';
-                            }
-                            return null;
-                          },
-                        ),
-                        
                         const SizedBox(height: 24),
                         
-                        // Botón de login
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _iniciarSesion,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                        // Login Button
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1e3c72),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Iniciar Sesión',
-                                    style: TextStyle(fontSize: 18),
-                                  ),
+                            elevation: 0,
                           ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'INGRESAR',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 24),
                   
-                  const SizedBox(height: 20),
-                  
-                  Text(
-                    'Ingresa con tu nombre, apellidos y contraseña',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                  // QR Login hint
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.qr_code_scanner, color: Colors.white70),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '¿Tienes código QR? Escanéalo para ingresar rápidamente.',
+                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

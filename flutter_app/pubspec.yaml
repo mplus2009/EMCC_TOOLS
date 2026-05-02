@@ -1,41 +1,56 @@
-{
-  "name": "sistema_escolar",
-  "description": "Sistema de Gestión Escolar - Aplicación Flutter",
-  "publish_to": "none",
-  "version": "1.0.0+1",
-  "environment": {
-    "sdk": ">=3.0.0 <4.0.0"
-  },
-  "dependencies": {
-    "flutter": {
-      "sdk": "flutter"
-    },
-    "cupertino_icons": ^1.0.6,
-    "http": ^1.1.0,
-    "shared_preferences": ^2.2.2,
-    "provider": ^6.1.1,
-    "google_fonts": ^6.1.0,
-    "font_awesome_flutter": ^10.6.0,
-    "qr_flutter": ^4.1.0,
-    "mobile_scanner": ^3.5.5,
-    "intl": ^0.18.1,
-    "flutter_local_notifications": ^16.3.0,
-    "dio": ^5.4.0,
-    "cached_network_image": ^3.3.1,
-    "pull_to_refresh": ^2.0.0,
-    "fl_chart": ^0.66.0"
-  },
-  "dev_dependencies": {
-    "flutter_test": {
-      "sdk": "flutter"
-    },
-    "flutter_lints": ^3.0.1"
-  },
-  "flutter": {
-    "uses-material-design": true,
-    "assets": [
-      "assets/styles/",
-      "assets/images/"
-    ]
-  }
-}
+name: emcc_digital
+description: Sistema de Gestión Escolar EMCC Digital - Aplicación Móvil
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # HTTP requests
+  http: ^1.1.0
+  
+  # QR Code scanning
+  mobile_scanner: ^3.5.5
+  
+  # QR Code generation
+  qr_flutter: ^4.1.0
+  
+  # Local storage
+  shared_preferences: ^2.2.2
+  
+  # Icons
+  cupertino_icons: ^1.0.6
+  
+  # Date formatting
+  intl: ^0.18.1
+  
+  # Image picker (for profile)
+  image_picker: ^1.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+  
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700

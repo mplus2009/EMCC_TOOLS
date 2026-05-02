@@ -1,177 +1,317 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import '../models/usuario.dart';
 
 class ApiService {
   // CAMBIAR ESTA URL POR LA DE TU SERVIDOR
-  static const String baseUrl = 'http://tuservidor.com/backend/api';
+  static const String baseUrl = 'http://tudominio.com/backend/api';
   
-  // Para pruebas locales usar: http://10.0.2.2/backend/api (Android emulator)
-  // o http://localhost/backend/api (iOS simulator/web)
+  String? _token;
   
-  static Future<Map<String, dynamic>> _post(String endpoint, Map<String, dynamic> data) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/$endpoint'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: data.map((key, value) => MapEntry(key, value.toString())),
-      );
-      
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Error de conexión: $e'};
-    }
-  }
+  // Singleton
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
   
-  static Future<Map<String, dynamic>> _get(String endpoint, {Map<String, String>? params}) async {
-    try {
-      Uri uri = Uri.parse('$baseUrl/$endpoint');
-      if (params != null) {
-        uri = uri.replace(queryParameters: params);
-      }
-      
-      final response = await http.get(uri);
-      return json.decode(response.body);
-    } catch (e) {
-      return {'success': false, 'message': 'Error de conexión: $e'};
-    }
-  }
+  // Getters y setters del token
+  String? get token => _token;
+  set token(String? value) => _token = value;
+  
+  // Headers para requests autenticados
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    if (_token != null) 'Authorization': 'Bearer $_token',
+  };
+  
+  Map<String, String> get _jsonHeaders => {
+    'Content-Type': 'application/json',
+    if (_token != null) 'Authorization': 'Bearer $_token',
+  };
   
   // ==================== AUTENTICACIÓN ====================
   
-  static Future<Map<String, dynamic>> login({
-    required String nombre,
-    required String apellidos,
-    required String password,
-    required String cargo,
-  }) async {
-    final result = await _post('auth.php', {
-      'accion': 'login',
-      'nombre': nombre,
-      'apellidos': apellidos,
-      'password': password,
-      'cargo': cargo,
-    });
-    
-    if (result['success'] == true && result['data'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('logueado', true);
-      await prefs.setInt('usuario_id', result['data']['usuario_id']);
-      await prefs.setString('usuario_nombre', result['data']['usuario_nombre']);
-      await prefs.setString('usuario_apellidos', result['data']['usuario_apellidos']);
-      await prefs.setString('usuario_ci', result['data']['usuario_ci'] ?? '');
-      await prefs.setString('usuario_cargo', result['data']['usuario_cargo']);
+  Future<Map<String, dynamic>> login(String ci, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth.php'),
+        body: {'accion': 'login', 'ci': ci, 'password': password},
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        _token = data['data']['token'];
+        return data;
+      } else {
+        throw Exception(data['message'] ?? 'Error al iniciar sesión');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
     }
-    
-    return result;
   }
   
-  static Future<Map<String, dynamic>> loginQR(String qrText) async {
-    final result = await _post('auth.php', {
-      'accion': 'login_qr',
-      'qr_text': qrText,
-    });
-    
-    if (result['success'] == true && result['data'] != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('logueado', true);
-      await prefs.setInt('usuario_id', result['data']['usuario_id']);
-      await prefs.setString('usuario_nombre', result['data']['usuario_nombre']);
-      await prefs.setString('usuario_apellidos', result['data']['usuario_apellidos']);
-      await prefs.setString('usuario_ci', result['data']['usuario_ci'] ?? '');
-      await prefs.setString('usuario_cargo', result['data']['usuario_cargo']);
+  Future<Map<String, dynamic>> loginQR(String qrData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth.php'),
+        body: {'accion': 'login_qr', 'qr_data': qrData},
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        _token = data['data']['token'];
+        return data;
+      } else {
+        throw Exception(data['message'] ?? 'Error al iniciar sesión con QR');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
     }
-    
-    return result;
   }
   
-  static Future<void> logout() async {
-    await _get('auth.php', params: {'accion': 'logout'});
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+  Future<void> logout() async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/auth.php'),
+        headers: _headers,
+        body: {'accion': 'logout'},
+      );
+      _token = null;
+    } catch (e) {
+      _token = null;
+    }
   }
   
-  static Future<bool> verificarSesion() async {
-    final prefs = await SharedPreferences.getInstance();
-    final logueado = prefs.getBool('logueado') ?? false;
-    
-    if (!logueado) return false;
-    
-    final result = await _get('auth.php', params: {'accion': 'verificar_sesion'});
-    return result['success'] == true;
+  Future<bool> verificarSesion() async {
+    try {
+      if (_token == null) return false;
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth.php?accion=verificar_sesion'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      return data['success'] == true;
+    } catch (e) {
+      return false;
+    }
   }
   
   // ==================== DASHBOARD ====================
   
-  static Future<Map<String, dynamic>> obtenerDatosDashboard() async {
-    return await _get('dashboard.php', params: {'accion': 'obtener_datos'});
+  Future<Map<String, dynamic>> obtenerDatosDashboard() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/dashboard.php?accion=obtener_datos'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        return data['data'];
+      } else {
+        throw Exception(data['message'] ?? 'Error al obtener datos');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
   }
   
-  static Future<Map<String, dynamic>> obtenerActividades() async {
-    return await _get('dashboard.php', params: {'accion': 'obtener_actividades'});
+  Future<List<EstudianteBusqueda>> buscarEstudiante(String termino) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/dashboard.php?accion=buscar_estudiante&q=$termino'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        List<dynamic> resultados = data['data'];
+        return resultados.map((e) => EstudianteBusqueda.fromJson(e)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
   
-  static Future<Map<String, dynamic>> buscarUsuario(String query, String cargo) async {
-    return await _get('dashboard.php', params: {
-      'accion': 'buscar_usuario',
-      'q': query,
-      'cargo': cargo,
-    });
+  Future<List<Actividad>> obtenerActividades({
+    String filtro = 'semana',
+    String tipo = 'todas',
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/dashboard.php?accion=obtener_actividades&filtro=$filtro&tipo=$tipo'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        List<dynamic> actividades = data['data'];
+        return actividades.map((e) => Actividad.fromJson(e)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
   
-  static Future<Map<String, dynamic>> buscarActividad(String tipo) async {
-    return await _get('dashboard.php', params: {
-      'accion': 'buscar_actividad',
-      'tipo': tipo,
-    });
-  }
-  
-  static Future<Map<String, dynamic>> marcarLeido(int actividadId) async {
-    return await _post('dashboard.php', {
-      'accion': 'marcar_leido',
-      'actividad_id': actividadId.toString(),
-    });
-  }
-  
-  static Future<Map<String, dynamic>> guardarAlegacion(int actividadId, String texto) async {
-    return await _post('dashboard.php', {
-      'accion': 'guardar_alegacion',
-      'actividad_id': actividadId.toString(),
-      'texto_alegacion': texto,
-    });
-  }
-  
-  static Future<Map<String, dynamic>> obtenerPerfil() async {
-    return await _get('dashboard.php', params: {'accion': 'obtener_perfil'});
+  Future<void> marcarTutorialVisto() async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/dashboard.php'),
+        headers: _jsonHeaders,
+        body: json.encode({'accion': 'marcar_tutorial_visto'}),
+      );
+    } catch (e) {
+      // Ignorar errores
+    }
   }
   
   // ==================== NOTIFICACIONES ====================
   
-  static Future<Map<String, dynamic>> registrarNotificacion({
-    required List<dynamic> destinatarios,
-    required List<dynamic> actividades,
+  Future<Map<String, dynamic>> obtenerCatalogos() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/notificaciones.php?accion=obtener_catalogos'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        return data['data'];
+      } else {
+        throw Exception(data['message'] ?? 'Error al obtener catálogos');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+  
+  Future<Map<String, dynamic>> crearNotificacion({
+    required List<Map<String, dynamic>> destinatarios,
+    required List<Map<String, dynamic>> actividades,
     required String fecha,
     required String hora,
     String observaciones = '',
-    String tipoNotificador = 'cuenta',
-    String tempNombre = 'Temporal',
   }) async {
-    return await _post('notificaciones.php', {
-      'accion': 'registrar',
-      'destinatarios': json.encode(destinatarios),
-      'actividades': json.encode(actividades),
-      'fecha': fecha,
-      'hora': hora,
-      'observaciones': observaciones,
-      'tipo_notificador': tipoNotificador,
-      'temp_nombre': tempNombre,
-    });
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/notificaciones.php'),
+        headers: _headers,
+        body: {
+          'accion': 'crear_notificacion',
+          'destinatarios': json.encode(destinatarios),
+          'actividades': json.encode(actividades),
+          'fecha': fecha,
+          'hora': hora,
+          'observaciones': observaciones,
+        },
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        return data;
+      } else {
+        throw Exception(data['message'] ?? 'Error al crear notificación');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
   }
   
-  static Future<Map<String, dynamic>> obtenerCatalogo(String tipo) async {
-    return await _get('notificaciones.php', params: {
-      'accion': 'obtener_catalogo',
-      'tipo': tipo,
-    });
+  Future<void> guardarAlegacion(int actividadId, String alegacion) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/notificaciones.php'),
+        headers: _headers,
+        body: {
+          'accion': 'guardar_alegacion',
+          'actividad_id': actividadId.toString(),
+          'alegacion': alegacion,
+        },
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] != true) {
+        throw Exception(data['message'] ?? 'Error al guardar alegación');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+  
+  Future<List<CatalogoItem>> buscarActividad(String termino, String tipo) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/notificaciones.php?accion=buscar_actividad&q=$termino&tipo=$tipo'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        List<dynamic> resultados = data['data'];
+        return resultados.map((e) => CatalogoItem.fromJson(e)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+  
+  // ==================== HORARIOS ====================
+  
+  Future<Map<String, dynamic>> obtenerHorario({String? grado, int? peloton}) async {
+    try {
+      String url = '$baseUrl/horarios.php?accion=obtener_horario';
+      if (grado != null) url += '&grado=$grado';
+      if (peloton != null) url += '&peloton=$peloton';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        return data['data'];
+      } else {
+        throw Exception(data['message'] ?? 'Error al obtener horario');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+  
+  Future<AsignaturaActual?> obtenerAsignaturaActual() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/horarios.php?accion=obtener_asignatura_actual'),
+        headers: _headers,
+      );
+      
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true && data['data'] != null) {
+        return AsignaturaActual.fromJson(data['data']);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
   }
 }

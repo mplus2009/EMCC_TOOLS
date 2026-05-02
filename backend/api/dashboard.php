@@ -1,330 +1,265 @@
 <?php
 /**
- * API de Dashboard
- * Maneja las operaciones del dashboard: actividades, perfil, notificaciones
+ * API del Dashboard
+ * Backend - Sistema Escolar EMCC Digital
  */
-
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Content-Type: application/json; charset=utf-8');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
 
 require_once '../config/database.php';
 
-$accion = $_GET['accion'] ?? '';
+$accion = $_GET['accion'] ?? $_POST['accion'] ?? '';
 
 switch ($accion) {
     case 'obtener_datos':
         obtenerDatosDashboard();
         break;
+    case 'buscar_estudiante':
+        buscarEstudiante();
+        break;
     case 'obtener_actividades':
         obtenerActividades();
         break;
-    case 'buscar_usuario':
-        buscarUsuario();
+    case 'obtener_estadisticas':
+        obtenerEstadisticas();
         break;
-    case 'buscar_actividad':
-        buscarActividad();
-        break;
-    case 'marcar_leido':
-        marcarLeido();
-        break;
-    case 'guardar_alegacion':
-        guardarAlegacion();
-        break;
-    case 'obtener_perfil':
-        obtenerPerfil();
+    case 'marcar_tutorial_visto':
+        marcarTutorialVisto();
         break;
     default:
-        enviarRespuestaJSON([
-            'success' => false,
-            'message' => 'Acción no válida',
-            'code' => 'INVALID_ACTION'
-        ], 400);
+        jsonResponse(false, null, 'Acción no válida', 400);
 }
 
+/**
+ * Obtener datos del dashboard según el rol
+ */
 function obtenerDatosDashboard() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON([
-            'success' => false,
-            'message' => 'No autorizado',
-            'code' => 'UNAUTHORIZED'
-        ], 401);
-    }
+    $usuario = verificarSesion();
+    $pdo = getDBConnection();
     
-    $conexion = obtenerConexion();
-    $usuario_id = $_SESSION['usuario_id'];
-    $usuario_cargo = $_SESSION['usuario_cargo'];
-    
-    // Obtener estadísticas según el cargo
     $datos = [
-        'usuario_nombre' => $_SESSION['usuario_nombre'],
-        'usuario_apellidos' => $_SESSION['usuario_apellidos'],
-        'usuario_cargo' => $usuario_cargo
+        'usuario' => $usuario,
+        'mostrar_tutorial' => false,
+        'nuevas_actividades' => 0,
+        'alarma_activa' => false
     ];
     
-    if ($usuario_cargo === 'estudiante') {
-        $id_end = 'estudiante_' . $usuario_id;
+    // Verificar si debe mostrar tutorial
+    $stmt = $pdo->prepare("SELECT tutorial_visto FROM usuarios WHERE id = ?");
+    $stmt->execute([$usuario['id']]);
+    $user_data = $stmt->fetch();
+    $datos['mostrar_tutorial'] = !$user_data['tutorial_visto'];
+    
+    if ($usuario['rol'] === 'estudiante') {
+        // Obtener estadísticas del estudiante
+        $datos = array_merge($datos, obtenerEstadisticasEstudiante($usuario['id'], $pdo));
         
-        // Balance
-        $sql_balance = "SELECT 
-                        SUM(CASE WHEN tipo = 'merito' THEN cantidad ELSE 0 END) as total_meritos,
-                        SUM(CASE WHEN tipo = 'demerito' THEN cantidad ELSE 0 END) as total_demeritos
-                        FROM actividad WHERE id_end = ?";
-        $stmt = $conexion->prepare($sql_balance);
-        $stmt->bind_param("s", $id_end);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        // Obtener actividades de la semana
+        $datos['actividades_semana'] = obtenerActividadesSemana($usuario['id'], $pdo);
         
-        $datos['balance'] = [
-            'meritos' => (int)($result['total_meritos'] ?? 0),
-            'demeritos' => (int)($result['total_demeritos'] ?? 0)
-        ];
+        // Verificar alarma
+        $stmt = $pdo->prepare("SELECT COUNT(*) as demeritos FROM actividades 
+                              WHERE destinatario_id = ? AND tipo = 'demerito' 
+                              AND YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)");
+        $stmt->execute([$usuario['id']]);
+        $demeritos = $stmt->fetch()['demeritos'];
+        $datos['alarma_activa'] = $demeritos >= 3; // Configurable
         
-        // Actividades recientes
-        $sql_actividades = "SELECT * FROM actividad WHERE id_end = ? ORDER BY fecha DESC, hora DESC LIMIT 50";
-        $stmt = $conexion->prepare($sql_actividades);
-        $stmt->bind_param("s", $id_end);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $actividades = [];
-        while ($row = $result->fetch_assoc()) {
-            $actividades[] = $row;
-        }
-        $stmt->close();
-        
-        $datos['actividades'] = $actividades;
-        
-        // Contar no leídos
-        $sql_no_leidos = "SELECT COUNT(*) as count FROM actividad WHERE id_end = ? AND leido = 0";
-        $stmt = $conexion->prepare($sql_no_leidos);
-        $stmt->bind_param("s", $id_end);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        
-        $datos['no_leidos'] = (int)$result['count'];
+    } elseif (in_array($usuario['rol'], ['profesor', 'oficial', 'directiva'])) {
+        // Contar nuevas actividades para notificaciones
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM actividades 
+                              WHERE destinatario_id = ? AND leido = 0");
+        $stmt->execute([$usuario['id']]);
+        $datos['nuevas_actividades'] = $stmt->fetch()['count'];
     }
     
-    enviarRespuestaJSON([
-        'success' => true,
-        'data' => $datos
-    ]);
+    jsonResponse(true, $datos);
 }
 
+/**
+ * Obtener estadísticas del estudiante
+ */
+function obtenerEstadisticasEstudiante($usuario_id, $pdo) {
+    // Méritos de la semana
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                          WHERE destinatario_id = ? AND tipo = 'merito' 
+                          AND YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)");
+    $stmt->execute([$usuario_id]);
+    $meritos_semana = $stmt->fetch()['total'];
+    
+    // Deméritos de la semana
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                          WHERE destinatario_id = ? AND tipo = 'demerito' 
+                          AND YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)");
+    $stmt->execute([$usuario_id]);
+    $demeritos_semana = $stmt->fetch()['total'];
+    
+    // Balance semanal
+    $balance_semana = $meritos_semana - $demeritos_semana;
+    
+    // Totales históricos
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                          WHERE destinatario_id = ? AND tipo = 'merito'");
+    $stmt->execute([$usuario_id]);
+    $meritos_total = $stmt->fetch()['total'];
+    
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                          WHERE destinatario_id = ? AND tipo = 'demerito'");
+    $stmt->execute([$usuario_id]);
+    $demeritos_total = $stmt->fetch()['total'];
+    
+    return [
+        'meritos_semana' => (int)$meritos_semana,
+        'demeritos_semana' => (int)$demeritos_semana,
+        'balance_semana' => (int)$balance_semana,
+        'meritos_total' => (int)$meritos_total,
+        'demeritos_total' => (int)$demeritos_total,
+        'balance_total' => (int)($meritos_total - $demeritos_total)
+    ];
+}
+
+/**
+ * Buscar estudiantes
+ */
+function buscarEstudiante() {
+    $usuario = verificarSesion();
+    
+    // Solo ciertos roles pueden buscar
+    if (!in_array($usuario['rol'], ['profesor', 'oficial', 'directiva'])) {
+        jsonResponse(false, null, 'No tiene permisos para buscar estudiantes', 403);
+    }
+    
+    $termino = $_GET['q'] ?? '';
+    
+    if (strlen($termino) < 2) {
+        jsonResponse(false, null, 'Término de búsqueda muy corto', 400);
+    }
+    
+    $pdo = getDBConnection();
+    $busqueda = "%{$termino}%";
+    
+    $stmt = $pdo->prepare("SELECT e.id, u.nombre, u.apellidos, u.CI, e.grado, e.peloton,
+                          (SELECT COALESCE(SUM(a.cantidad), 0) FROM actividades a 
+                           WHERE a.destinatario_id = e.id AND a.tipo = 'merito') as meritos,
+                          (SELECT COALESCE(SUM(a.cantidad), 0) FROM actividades a 
+                           WHERE a.destinatario_id = e.id AND a.tipo = 'demerito') as demeritos
+                          FROM estudiante e
+                          INNER JOIN usuarios u ON e.id = u.id
+                          WHERE (u.nombre LIKE ? OR u.apellidos LIKE ? OR u.CI LIKE ? OR e.grado LIKE ?)
+                          AND u.estado = 'activo'
+                          LIMIT 20");
+    $stmt->execute([$busqueda, $busqueda, $busqueda, $busqueda]);
+    $resultados = $stmt->fetchAll();
+    
+    // Calcular balance para cada resultado
+    foreach ($resultados as &$est) {
+        $est['balance'] = (int)$est['meritos'] - (int)$est['demeritos'];
+        $est['nombre_completo'] = trim($est['nombre'] . ' ' . $est['apellidos']);
+    }
+    
+    jsonResponse(true, $resultados);
+}
+
+/**
+ * Obtener actividades del usuario
+ */
 function obtenerActividades() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
+    $usuario = verificarSesion();
+    $pdo = getDBConnection();
+    
+    $filtro = $_GET['filtro'] ?? 'semana'; // semana, mes, todas
+    $tipo = $_GET['tipo'] ?? 'todas'; // todas, merito, demerito
+    
+    $where = "WHERE a.destinatario_id = ?";
+    $params = [$usuario['id']];
+    
+    if ($filtro === 'semana') {
+        $where .= " AND YEARWEEK(a.fecha, 1) = YEARWEEK(CURDATE(), 1)";
+    } elseif ($filtro === 'mes') {
+        $where .= " AND MONTH(a.fecha) = MONTH(CURDATE()) AND YEAR(a.fecha) = YEAR(CURDATE())";
     }
     
-    $conexion = obtenerConexion();
-    $usuario_id = $_SESSION['usuario_id'];
-    $usuario_cargo = $_SESSION['usuario_cargo'];
-    
-    if ($usuario_cargo === 'estudiante') {
-        $id_end = 'estudiante_' . $usuario_id;
-        $sql = "SELECT * FROM actividad WHERE id_end = ? ORDER BY fecha DESC, hora DESC";
-        $stmt = $conexion->prepare($sql);
-        $stmt->bind_param("s", $id_end);
-    } else {
-        $id_star_prefix = $usuario_cargo . '_';
-        $sql = "SELECT * FROM actividad WHERE id_star LIKE ? ORDER BY fecha DESC, hora DESC";
-        $stmt = $conexion->prepare($sql);
-        $like_param = $id_star_prefix . '%';
-        $stmt->bind_param("s", $like_param);
+    if ($tipo !== 'todas') {
+        $where .= " AND a.tipo = ?";
+        $params[] = $tipo;
     }
     
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $actividades = [];
-    while ($row = $result->fetch_assoc()) {
-        $actividades[] = $row;
-    }
-    $stmt->close();
+    $stmt = $pdo->prepare("SELECT a.*, u.nombre as notificador_nombre, u.apellidos as notificador_apellidos,
+                          (SELECT alegacion FROM alegaciones WHERE actividad_id = a.id LIMIT 1) as alegacion
+                          FROM actividades a
+                          LEFT JOIN usuarios u ON a.notificador_id = u.id
+                          {$where}
+                          ORDER BY a.fecha DESC, a.hora DESC
+                          LIMIT 50");
+    $stmt->execute($params);
+    $actividades = $stmt->fetchAll();
     
-    enviarRespuestaJSON([
-        'success' => true,
-        'data' => ['actividades' => $actividades]
-    ]);
+    // Formatear respuesta
+    foreach ($actividades as &$act) {
+        $act['notificador'] = trim($act['notificador_nombre'] . ' ' . $act['notificador_apellidos']);
+        $act['es_merito'] = $act['tipo'] === 'merito';
+    }
+    
+    jsonResponse(true, $actividades);
 }
 
-function buscarUsuario() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
-    }
-    
-    $conexion = obtenerConexion();
-    $busqueda = $_GET['q'] ?? '';
-    $cargo_filtro = $_GET['cargo'] ?? 'estudiante';
-    
-    if (empty($busqueda)) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Término de búsqueda requerido'], 400);
-    }
-    
-    $tablas_permitidas = ['directiva', 'oficial', 'profesor', 'estudiante'];
-    if (!in_array($cargo_filtro, $tablas_permitidas)) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Cargo no válido'], 400);
-    }
-    
-    $busqueda_upper = strtoupper(eliminarTildes($busqueda));
-    
-    $sql = "SELECT id, nombre, apellidos, ci, grado, grupo FROM $cargo_filtro 
-            WHERE UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nombre, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE ? 
-            OR UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(apellidos, 'á','a'), 'é','e'), 'í','i'), 'ó','o'), 'ú','u')) LIKE ?
-            OR ci LIKE ?
-            LIMIT 20";
-    
-    $like_param = '%' . $busqueda_upper . '%';
-    $ci_like = '%' . $busqueda . '%';
-    
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("sss", $like_param, $like_param, $ci_like);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $usuarios = [];
-    while ($row = $result->fetch_assoc()) {
-        $usuarios[] = $row;
-    }
-    $stmt->close();
-    
-    enviarRespuestaJSON([
-        'success' => true,
-        'data' => ['usuarios' => $usuarios]
-    ]);
+/**
+ * Obtener actividades de la semana agrupadas
+ */
+function obtenerActividadesSemana($usuario_id, $pdo) {
+    $stmt = $pdo->prepare("SELECT a.*, u.nombre as notificador_nombre, u.apellidos as notificador_apellidos,
+                          (SELECT alegacion FROM alegaciones WHERE actividad_id = a.id LIMIT 1) as alegacion
+                          FROM actividades a
+                          LEFT JOIN usuarios u ON a.notificador_id = u.id
+                          WHERE a.destinatario_id = ? AND YEARWEEK(a.fecha, 1) = YEARWEEK(CURDATE(), 1)
+                          ORDER BY a.fecha DESC, a.hora DESC");
+    $stmt->execute([$usuario_id]);
+    return $stmt->fetchAll();
 }
 
-function buscarActividad() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
+/**
+ * Obtener estadísticas generales (para admin)
+ */
+function obtenerEstadisticas() {
+    $usuario = verificarSesion();
+    
+    if (!in_array($usuario['rol'], ['directiva', 'oficial'])) {
+        jsonResponse(false, null, 'No tiene permisos para ver estadísticas', 403);
     }
     
-    $conexion = obtenerConexion();
-    $tipo = $_GET['tipo'] ?? 'merito';
+    $pdo = getDBConnection();
     
-    if ($tipo === 'merito') {
-        $sql = "SELECT * FROM meritos ORDER BY nombre";
-    } else {
-        $sql = "SELECT * FROM demeritos ORDER BY nombre";
-    }
+    $stats = [];
     
-    $result = $conexion->query($sql);
-    $actividades = [];
-    while ($row = $result->fetch_assoc()) {
-        $actividades[] = $row;
-    }
+    // Total de estudiantes
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM estudiante");
+    $stats['total_estudiantes'] = $stmt->fetch()['total'];
     
-    enviarRespuestaJSON([
-        'success' => true,
-        'data' => ['actividades' => $actividades]
-    ]);
+    // Total de profesores
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM usuarios WHERE rol = 'profesor'");
+    $stats['total_profesores'] = $stmt->fetch()['total'];
+    
+    // Méritos esta semana
+    $stmt = $pdo->query("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                        WHERE tipo = 'merito' AND YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)");
+    $stats['meritos_semana'] = $stmt->fetch()['total'];
+    
+    // Deméritos esta semana
+    $stmt = $pdo->query("SELECT COALESCE(SUM(cantidad), 0) as total FROM actividades 
+                        WHERE tipo = 'demerito' AND YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)");
+    $stats['demeritos_semana'] = $stmt->fetch()['total'];
+    
+    jsonResponse(true, $stats);
 }
 
-function marcarLeido() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
-    }
+/**
+ * Marcar tutorial como visto
+ */
+function marcarTutorialVisto() {
+    $usuario = verificarSesion();
+    $pdo = getDBConnection();
     
-    $conexion = obtenerConexion();
-    $actividad_id = $_POST['actividad_id'] ?? 0;
+    $stmt = $pdo->prepare("UPDATE usuarios SET tutorial_visto = 1 WHERE id = ?");
+    $stmt->execute([$usuario['id']]);
     
-    if (!$actividad_id) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'ID de actividad requerido'], 400);
-    }
-    
-    $usuario_id = $_SESSION['usuario_id'];
-    $id_end = 'estudiante_' . $usuario_id;
-    
-    $sql = "UPDATE actividad SET leido = 1 WHERE id = ? AND id_end = ?";
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("is", $actividad_id, $id_end);
-    
-    if ($stmt->execute()) {
-        enviarRespuestaJSON(['success' => true, 'message' => 'Actividad marcada como leída']);
-    } else {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Error al actualizar'], 500);
-    }
-}
-
-function guardarAlegacion() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
-    }
-    
-    $conexion = obtenerConexion();
-    $actividad_id = $_POST['actividad_id'] ?? 0;
-    $texto_alegacion = $_POST['texto_alegacion'] ?? '';
-    
-    if (!$actividad_id || empty($texto_alegacion)) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Datos incompletos'], 400);
-    }
-    
-    $usuario_id = $_SESSION['usuario_id'];
-    $id_end = 'estudiante_' . $usuario_id;
-    
-    // Verificar que la actividad pertenece al usuario
-    $sql_check = "SELECT id FROM actividad WHERE id = ? AND id_end = ?";
-    $stmt = $conexion->prepare($sql_check);
-    $stmt->bind_param("is", $actividad_id, $id_end);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Actividad no encontrada'], 404);
-    }
-    $stmt->close();
-    
-    // Insertar o actualizar alegación
-    $sql = "INSERT INTO alegaciones (actividad_id, texto, fecha_creacion) 
-            VALUES (?, ?, NOW()) 
-            ON DUPLICATE KEY UPDATE texto = ?, fecha_creacion = NOW()";
-    
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("iss", $actividad_id, $texto_alegacion, $texto_alegacion);
-    
-    if ($stmt->execute()) {
-        enviarRespuestaJSON(['success' => true, 'message' => 'Alegación guardada correctamente']);
-    } else {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Error al guardar alegación'], 500);
-    }
-}
-
-function obtenerPerfil() {
-    session_start();
-    if (!isset($_SESSION['usuario_id']) || !isset($_SESSION['logueado']) || $_SESSION['logueado'] !== true) {
-        enviarRespuestaJSON(['success' => false, 'message' => 'No autorizado'], 401);
-    }
-    
-    $conexion = obtenerConexion();
-    $usuario_id = $_SESSION['usuario_id'];
-    $usuario_cargo = $_SESSION['usuario_cargo'];
-    
-    $sql = "SELECT * FROM $usuario_cargo WHERE id = ?";
-    $stmt = $conexion->prepare($sql);
-    $stmt->bind_param("i", $usuario_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 1) {
-        $perfil = $result->fetch_assoc();
-        enviarRespuestaJSON([
-            'success' => true,
-            'data' => ['perfil' => $perfil]
-        ]);
-    } else {
-        enviarRespuestaJSON(['success' => false, 'message' => 'Perfil no encontrado'], 404);
-    }
+    jsonResponse(true, null, 'Tutorial marcado como visto');
 }
 ?>
